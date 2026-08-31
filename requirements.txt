@@ -1,0 +1,9 @@
+Flask
+PyPDF2
+python-docx
+newspaper3k
+easyocr
+Pillow
+requests
+beautifulsoup4
+python-dotenv
