@@ -1,0 +1,101 @@
+/* Базовые стили */
+body {
+    background: #eef2f7;
+    padding-top: 20px;
+    transition: background 0.3s, color 0.3s;
+}
+.card {
+    max-width: 800px;
+    margin: auto;
+    transition: background 0.3s, border-color 0.3s;
+}
+.tab-content {
+    padding-top: 20px;
+}
+.result {
+    margin-top: 20px;
+    white-space: pre-wrap;
+}
+.char-counter {
+    font-size: 0.8rem;
+}
+
+/* ---------- Тёмная тема ---------- */
+body.dark-theme {
+    background: #1a1a2e;
+    color: #e0e0e0;
+}
+body.dark-theme .card {
+    background: #16213e;
+    border-color: #0f3460;
+}
+body.dark-theme .card-header {
+    background: #0f3460 !important;
+}
+body.dark-theme .card-header.bg-success {
+    background: #1b5e20 !important;
+}
+body.dark-theme .card-header.bg-dark {
+    background: #0a0a1a !important;
+}
+body.dark-theme .form-control,
+body.dark-theme .form-select {
+    background: #2a2a4a;
+    color: #e0e0e0;
+    border-color: #3a3a5a;
+}
+body.dark-theme .form-control:focus,
+body.dark-theme .form-select:focus {
+    background: #2a2a4a;
+    color: #e0e0e0;
+}
+body.dark-theme .btn-outline-secondary {
+    color: #ccc;
+    border-color: #555;
+}
+body.dark-theme .btn-outline-secondary:hover {
+    background: #555;
+    color: #fff;
+}
+body.dark-theme .btn-outline-primary {
+    color: #8ab4f8;
+    border-color: #8ab4f8;
+}
+body.dark-theme .btn-outline-primary:hover {
+    background: #8ab4f8;
+    color: #1a1a2e;
+}
+body.dark-theme .btn-outline-danger {
+    color: #f28b82;
+    border-color: #f28b82;
+}
+body.dark-theme .btn-outline-danger:hover {
+    background: #f28b82;
+    color: #1a1a2e;
+}
+body.dark-theme .text-muted {
+    color: #b0b0b0 !important;
+}
+body.dark-theme .alert-danger {
+    background: #3a1a1a;
+    color: #f5c6cb;
+    border-color: #6a2a2a;
+}
+body.dark-theme .card.border-success {
+    border-color: #1b5e20 !important;
+}
+body.dark-theme .badge.bg-light {
+    background: #2a2a4a !important;
+    color: #e0e0e0 !important;
+}
+body.dark-theme .nav-tabs .nav-link {
+    color: #b0b0b0;
+}
+body.dark-theme .nav-tabs .nav-link.active {
+    background: #16213e;
+    color: #e0e0e0;
+    border-color: #0f3460 #0f3460 #16213e;
+}
+body.dark-theme .nav-tabs .nav-link:hover {
+    border-color: #0f3460;
+}

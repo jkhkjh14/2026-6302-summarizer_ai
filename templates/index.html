@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ИИ-суммаризатор текста</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #eef2f7; padding-top: 20px; }
-        .card { max-width: 800px; margin: auto; }
-        .tab-content { padding-top: 20px; }
-        .result { margin-top: 20px; white-space: pre-wrap; }
-        .badge-compression { font-size: 1.2rem; }
-    </style>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
 <div class="container">
     <div class="card shadow-sm">
-        <div class="card-header bg-dark text-white text-center">
-            <h3>📄 ИИ-суммаризатор</h3>
-            <p class="mb-0">Вставьте текст, загрузите файл или укажите URL</p>
+        <div class="card-header bg-dark text-white text-center d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-0">📄 ИИ-суммаризатор</h3>
+                <p class="mb-0">Вставьте текст, загрузите файл или укажите URL</p>
+            </div>
+            <div>
+                <button id="themeToggle" class="btn btn-outline-light btn-sm">🌙 Тёмная</button>
+            </div>
         </div>
+
         <div class="card-body">
             <!-- Блок управления степенью сжатия -->
             <div class="mb-3">
@@ -59,6 +59,10 @@
                     <div class="mb-3">
                         <label for="inputText" class="form-label">Введите или вставьте текст</label>
                         <textarea id="inputText" class="form-control" rows="6" placeholder="Введите текст для сокращения..."></textarea>
+                        <div class="d-flex justify-content-between mt-1 char-counter">
+                            <small id="charCount" class="text-muted">Символов: 0</small>
+                            <small id="wordCount" class="text-muted">Слов: 0</small>
+                        </div>
                     </div>
                     <button id="summarizeTextBtn" class="btn btn-primary w-100">Сократить текст</button>
                 </div>
@@ -85,10 +89,11 @@
             <!-- Блок для результата -->
             <div id="result" class="result"></div>
 
-            <!-- Кнопки скачивания -->
+            <!-- Кнопки скачивания и очистки -->
             <div id="downloadSection" style="display: none; margin-top: 15px;">
                 <button id="downloadTxtBtn" class="btn btn-outline-secondary">Скачать .txt</button>
                 <button id="downloadDocxBtn" class="btn btn-outline-primary">Скачать .docx</button>
+                <button id="clearAllBtn" class="btn btn-outline-danger" style="float: right;">✕ Очистить всё</button>
             </div>
         </div>
     </div>
@@ -96,173 +101,7 @@
 
 <!-- Bootstrap JS для вкладок -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-    let lastSummary = '';
-
-    // ----- Вспомогательная функция для получения желаемого количества слов -----
-    function getDesiredWords() {
-        const select = document.getElementById('compressionSelect');
-        const customInput = document.getElementById('customWordsInput');
-        if (select.value === 'custom') {
-            let val = parseInt(customInput.value);
-            if (isNaN(val) || val < 1) val = 150;
-            return val;
-        } else {
-            return parseInt(select.value);
-        }
-    }
-
-    // ----- Переключение видимости поля для ввода своего значения -----
-    document.getElementById('compressionSelect').addEventListener('change', function() {
-        const container = document.getElementById('customWordsContainer');
-        container.style.display = (this.value === 'custom') ? 'block' : 'none';
-    });
-    // Инициализация при загрузке
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('compressionSelect').dispatchEvent(new Event('change'));
-    });
-
-    // ----- Общая функция отображения результата -----
-    function displayResult(data) {
-        const resultDiv = document.getElementById('result');
-        if (data.error) {
-            resultDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
-            document.getElementById('downloadSection').style.display = 'none';
-            return;
-        }
-
-        let paramInfo = '';
-        if (data.desired_words) {
-            paramInfo = `| Желаемое кол-во слов: ${data.desired_words}`;
-        }
-        if (data.max_tokens_used) {
-            paramInfo += ` (токенов: ${data.max_tokens_used})`;
-        }
-
-        resultDiv.innerHTML = `
-            <div class="card border-success mt-3">
-                <div class="card-header bg-success text-white">
-                    Результат
-                    <span class="badge bg-light text-dark float-end">Сжатие: ${data.compression}%</span>
-                </div>
-                <div class="card-body">
-                    <h6>Краткое изложение:</h6>
-                    <p class="fw-bold">${data.summary}</p>
-                    <hr>
-                    <small class="text-muted">
-                        Было слов: ${data.original_words} → Стало: ${data.summary_words}
-                        ${paramInfo}
-                    </small>
-                </div>
-            </div>
-        `;
-        lastSummary = data.summary;
-        document.getElementById('downloadSection').style.display = 'block';
-    }
-
-    // ----- Обработка текста -----
-    document.getElementById('summarizeTextBtn').addEventListener('click', function() {
-        const text = document.getElementById('inputText').value.trim();
-        if (!text) {
-            alert('Введите текст');
-            return;
-        }
-        const desiredWords = getDesiredWords();
-        const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
-        fetch('/summarize_text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: text,
-                desired_words: desiredWords
-            })
-        })
-        .then(response => response.json())
-        .then(data => displayResult(data))
-        .catch(error => resultDiv.innerHTML = `<div class="alert alert-danger">Ошибка: ${error.message}</div>`);
-    });
-
-    // ----- Обработка URL -----
-    document.getElementById('summarizeUrlBtn').addEventListener('click', function() {
-        const url = document.getElementById('inputUrl').value.trim();
-        if (!url) {
-            alert('Введите URL');
-            return;
-        }
-        const desiredWords = getDesiredWords();
-        const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
-        fetch('/summarize_url', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                url: url,
-                desired_words: desiredWords
-            })
-        })
-        .then(response => response.json())
-        .then(data => displayResult(data))
-        .catch(error => resultDiv.innerHTML = `<div class="alert alert-danger">Ошибка: ${error.message}</div>`);
-    });
-
-    // ----- Обработка файла (включая картинки) -----
-    document.getElementById('summarizeFileBtn').addEventListener('click', function() {
-        const fileInput = document.getElementById('fileInput');
-        const file = fileInput.files[0];
-        if (!file) {
-            alert('Выберите файл');
-            return;
-        }
-        const desiredWords = getDesiredWords();
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('desired_words', desiredWords);
-        const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
-        fetch('/summarize_file', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => displayResult(data))
-        .catch(error => resultDiv.innerHTML = `<div class="alert alert-danger">Ошибка: ${error.message}</div>`);
-    });
-
-    // ----- Скачивание .txt -----
-    document.getElementById('downloadTxtBtn').addEventListener('click', function() {
-        if (!lastSummary) return;
-        fetch('/download_txt', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ summary: lastSummary })
-        })
-        .then(response => response.blob())
-        .then(blob => {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'summary.txt';
-            link.click();
-        });
-    });
-
-    // ----- Скачивание .docx -----
-    document.getElementById('downloadDocxBtn').addEventListener('click', function() {
-        if (!lastSummary) return;
-        fetch('/download_docx', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ summary: lastSummary })
-        })
-        .then(response => response.blob())
-        .then(blob => {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'summary.docx';
-            link.click();
-        });
-    });
-</script>
+<!-- Подключаем наш скрипт -->
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
