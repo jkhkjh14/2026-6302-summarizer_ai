@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # shell-форма — переменная PORT подставится
-CMD gunicorn -w 4 -b 0.0.0.0:$PORT app:app
+gunicorn -w 4 -b 0.0.0.0:$PORT app:app
