@@ -21,23 +21,25 @@
         </div>
 
         <div class="card-body">
-            <!-- Блок управления степенью сжатия -->
+            <!-- Блок управления степенью сжатия (проценты) -->
             <div class="mb-3">
-                <label for="compressionSelect" class="form-label fw-bold">Степень сжатия</label>
-                <div class="row g-2 align-items-center">
-                    <div class="col-md-6">
-                        <select id="compressionSelect" class="form-select">
-                            <option value="500">Максимально кратко (~500 слов)</option>
-                            <option value="1500" selected>Средне (~1500 слов)</option>
-                            <option value="2500">Подробно (~2500 слов)</option>
-                            <option value="custom">Своё значение</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6" id="customWordsContainer" style="display: none;">
-                        <input type="number" id="customWordsInput" class="form-control" placeholder="Введите кол-во слов" min="10" max="500" value="150">
-                    </div>
+                <label for="compressionRange" class="form-label fw-bold">Степень сжатия</label>
+                <div class="mb-2">
+                    <span class="badge bg-primary" id="percentDisplay">50%</span>
+                    <span class="text-muted ms-2" id="targetWordsHint"></span>
                 </div>
-                <small class="text-muted">Выберите один из вариантов или укажите своё желаемое количество слов в итоговом пересказе</small>
+                <input type="range" class="form-range" id="compressionRange" min="10" max="90" value="50" step="5">
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Кратко (10%)</span>
+                    <span class="text-muted small">Средне (50%)</span>
+                    <span class="text-muted small">Подробно (90%)</span>
+                </div>
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-secondary btn-sm preset-btn" data-percent="25">25%</button>
+                    <button class="btn btn-outline-secondary btn-sm preset-btn" data-percent="50">50%</button>
+                    <button class="btn btn-outline-secondary btn-sm preset-btn" data-percent="75">75%</button>
+                </div>
+                <small class="text-muted d-block mt-1">Выберите процент текста, который хотите оставить в пересказе</small>
             </div>
 
             <!-- Вкладки -->

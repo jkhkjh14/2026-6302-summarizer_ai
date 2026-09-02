@@ -1,35 +1,57 @@
 let lastSummary = '';
 
+// ----- Получение процента сжатия -----
+function getCompressionPercent() {
+    const range = document.getElementById('compressionRange');
+    return parseInt(range.value);
+}
+
+// ----- Обновление отображения процента и подписи -----
+function updatePercentDisplay() {
+    const percent = getCompressionPercent();
+    document.getElementById('percentDisplay').textContent = percent + '%';
+    
+    // Показываем (оставить ~X слов) только если есть текст
+    const text = document.getElementById('inputText').value.trim();
+    const hintEl = document.getElementById('targetWordsHint');
+    if (text) {
+        const words = text.match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu);
+        const wordCount = words ? words.length : 0;
+        const targetWords = Math.round(wordCount * percent / 100);
+        hintEl.textContent = `(оставить ~${targetWords} слов)`;
+    } else {
+        hintEl.textContent = '';
+    }
+}
+
 // ----- Счётчик символов и слов -----
 document.getElementById('inputText').addEventListener('input', function() {
     const text = this.value;
     const charCount = text.length;
-    const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    const words = text.match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu);
+    const wordCount = words ? words.length : 0;
     document.getElementById('charCount').textContent = `Символов: ${charCount}`;
     document.getElementById('wordCount').textContent = `Слов: ${wordCount}`;
+    updatePercentDisplay();
 });
 
-// ----- Вспомогательная функция для получения желаемого количества слов -----
-function getDesiredWords() {
-    const select = document.getElementById('compressionSelect');
-    const customInput = document.getElementById('customWordsInput');
-    if (select.value === 'custom') {
-        let val = parseInt(customInput.value);
-        if (isNaN(val) || val < 1) val = 150;
-        return val;
-    } else {
-        return parseInt(select.value);
-    }
-}
-
-// ----- Переключение видимости поля для ввода своего значения -----
-document.getElementById('compressionSelect').addEventListener('change', function() {
-    const container = document.getElementById('customWordsContainer');
-    container.style.display = (this.value === 'custom') ? 'block' : 'none';
+// ----- Синхронизация ползунка и отображения -----
+document.getElementById('compressionRange').addEventListener('input', function() {
+    updatePercentDisplay();
 });
+
+// ----- Кнопки быстрых процентов -----
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const val = parseInt(this.dataset.percent);
+        document.getElementById('compressionRange').value = val;
+        updatePercentDisplay();
+    });
+});
+
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('compressionSelect').dispatchEvent(new Event('change'));
+    updatePercentDisplay();
 });
 
 // ----- Функция отображения загрузки -----
@@ -68,12 +90,11 @@ function clearAll() {
     document.getElementById('fileInput').value = '';
     document.getElementById('result').innerHTML = '';
     document.getElementById('downloadSection').style.display = 'none';
-    // Обновить счётчики
     const event = new Event('input');
     document.getElementById('inputText').dispatchEvent(event);
+    updatePercentDisplay();
 }
 
-// Кнопка очистки
 document.getElementById('clearAllBtn').addEventListener('click', clearAll);
 
 // ----- Общая функция отображения результата -----
@@ -89,8 +110,11 @@ function displayResult(data) {
     if (data.desired_words) {
         paramInfo = `| Желаемое кол-во слов: ${data.desired_words}`;
     }
+    if (data.compression_percent) {
+        paramInfo += ` (${data.compression_percent}% от оригинала)`;
+    }
     if (data.max_tokens_used) {
-        paramInfo += ` (токенов: ${data.max_tokens_used})`;
+        paramInfo += ` | Токенов: ${data.max_tokens_used}`;
     }
 
     resultDiv.innerHTML = `
@@ -124,7 +148,7 @@ document.getElementById('summarizeTextBtn').addEventListener('click', function()
         alert('Введите текст');
         return;
     }
-    const desiredWords = getDesiredWords();
+    const compressionPercent = getCompressionPercent();
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = showLoading();
     fetch('/summarize_text', {
@@ -132,7 +156,7 @@ document.getElementById('summarizeTextBtn').addEventListener('click', function()
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             text: text,
-            desired_words: desiredWords
+            compression_percent: compressionPercent
         })
     })
     .then(response => response.json())
@@ -147,7 +171,7 @@ document.getElementById('summarizeUrlBtn').addEventListener('click', function() 
         alert('Введите URL');
         return;
     }
-    const desiredWords = getDesiredWords();
+    const compressionPercent = getCompressionPercent();
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = showLoading();
     fetch('/summarize_url', {
@@ -155,7 +179,7 @@ document.getElementById('summarizeUrlBtn').addEventListener('click', function() 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             url: url,
-            desired_words: desiredWords
+            compression_percent: compressionPercent
         })
     })
     .then(response => response.json())
@@ -163,7 +187,7 @@ document.getElementById('summarizeUrlBtn').addEventListener('click', function() 
     .catch(error => resultDiv.innerHTML = `<div class="alert alert-danger">Ошибка: ${error.message}</div>`);
 });
 
-// ----- Обработка файла (включая картинки) -----
+// ----- Обработка файла -----
 document.getElementById('summarizeFileBtn').addEventListener('click', function() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -171,10 +195,10 @@ document.getElementById('summarizeFileBtn').addEventListener('click', function()
         alert('Выберите файл');
         return;
     }
-    const desiredWords = getDesiredWords();
+    const compressionPercent = getCompressionPercent();
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('desired_words', desiredWords);
+    formData.append('compression_percent', compressionPercent);
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = showLoading();
     fetch('/summarize_file', {
@@ -220,7 +244,7 @@ document.getElementById('downloadDocxBtn').addEventListener('click', function() 
     });
 });
 
-// ----- ТЁМНАЯ ТЕМА (сохранение в localStorage) -----
+// ----- ТЁМНАЯ ТЕМА -----
 (function() {
     const themeToggle = document.getElementById('themeToggle');
     const currentTheme = localStorage.getItem('theme');
